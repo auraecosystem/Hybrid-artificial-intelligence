@@ -1,4 +1,4 @@
-package Git::SVN::Migration;
+package Git::SVN::Migration; 
 # these version numbers do NOT correspond to actual version numbers
 # of git or git-svn.  They are just relative.
 #
