@@ -1,0 +1,149 @@
+name: Release (update major tag)
+on:
+  release:
+    types: [released]
+  workflow_dispatch:
+    inputs:
+      TAG_NAME:
+        description: 'Tag name that the major tag will point to (e.g. v1.2.3 or 1.2.3). If omitted for a release event, the release tag is used.'
+        required: false
+
+# Prefer the explicit input when manually dispatched, otherwise use the release tag_name
+env:
+  TAG_NAME: ${{ github.event.inputs.TAG_NAME || github.event.release.tag_name }}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-update-major-${{ env.TAG_NAME || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  update_tag:
+    name: Update major tag for ${{ env.TAG_NAME }}
+    runs-on: ubuntu-latest
+    environment:
+      # keep this environment protected if you require approvals
+      name: Release
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Ensure TAG_NAME is set
+        if: ${{ env.TAG_NAME == '' }}
+        run: |
+          echo "ERROR: TAG_NAME is empty. Provide TAG_NAME when dispatching or trigger via a release event."
+          exit 1
+
+      - name: Compute MAJOR_TAG (e.g. v1 from v1.2.3)
+        id: compute_major
+        run: |
+          set -euo pipefail
+          RAW="${{ env.TAG_NAME }}"
+          echo "Raw TAG_NAME='${RAW}'"
+          # Normalize: accept "v1.2.3", "1.2.3", "v1.2", "release-1.2.3", etc.
+          # Try to capture a leading numeric major version. If none, fallback to the raw tag.
+          if [[ "${RAW}" =~ ^v?([0-9]+) ]]; then
+            MAJOR="v${BASH_REMATCH[1]}"
+          elif [[ "${RAW}" =~ ([0-9]+)\. ]]; then
+            MAJOR="v${BASH_REMATCH[1]}"
+          else
+            # Fallback: use full tag name but sanitize slashes and spaces
+            SANITIZED="$(echo "${RAW}" | tr ' /' '-' )"
+            MAJOR="${SANITIZED}"
+          fi
+          echo "Computed MAJOR_TAG=${MAJOR}"
+          echo "MAJOR_TAG=${MAJOR}" >> "$GITHUB_ENV"
+
+      - name: Resolve source tag to commit SHA and update/create major tag
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const sourceTag = process.env.TAG_NAME;
+            const majorTag = process.env.MAJOR_TAG;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const core = require('@actions/core');
+
+            if (!sourceTag) {
+              core.setFailed('sourceTag (TAG_NAME) is empty');
+              return;
+            }
+            if (!majorTag) {
+              core.setFailed('majorTag (MAJOR_TAG) is empty');
+              return;
+            }
+
+            core.info(`Source tag: ${sourceTag}`);
+            core.info(`Major tag: ${majorTag}`);
+
+            // Helper to get ref; note: ref param for getRef is "tags/<tag-name>"
+            async function getTagRef(tag) {
+              try {
+                return await github.rest.git.getRef({
+                  owner,
+                  repo,
+                  ref: `tags/${tag}`
+                });
+              } catch (err) {
+                throw new Error(`Failed to get ref for tag '${tag}': ${err.message}`);
+              }
+            }
+
+            async function resolveToCommitSha(refData) {
+              let objectSha = refData.data.object.sha;
+              const objectType = refData.data.object.type;
+              core.info(`Source ref object type: ${objectType}, sha: ${objectSha}`);
+              if (objectType === 'tag') {
+                // annotated tag object -> getTag to find the underlying object (commit/tree)
+                try {
+                  const tagObj = await github.rest.git.getTag({
+                    owner,
+                    repo,
+                    tag_sha: objectSha
+                  });
+                  core.info(`Annotated tag: points to ${tagObj.data.object.type} ${tagObj.data.object.sha}`);
+                  return tagObj.data.object.sha;
+                } catch (err) {
+                  throw new Error(`Failed to resolve annotated tag object: ${err.message}`);
+                }
+              }
+              return objectSha;
+            }
+
+            (async () => {
+              try {
+                const srcRef = await getTagRef(sourceTag);
+                const commitSha = await resolveToCommitSha(srcRef);
+
+                const targetRef = `refs/tags/${majorTag}`;
+
+                // Try to update existing tag (force), otherwise create it
+                try {
+                  await github.rest.git.updateRef({
+                    owner,
+                    repo,
+                    ref: `tags/${majorTag}`,
+                    sha: commitSha,
+                    force: true
+                  });
+                  core.info(`Updated tag ${majorTag} -> ${commitSha}`);
+                } catch (err) {
+                  if (err.status === 404) {
+                    // Create new lightweight tag ref pointing to commit sha
+                    await github.rest.git.createRef({
+                      owner,
+                      repo,
+                      ref: targetRef,
+                      sha: commitSha
+                    });
+                    core.info(`Created tag ${majorTag} -> ${commitSha}`);
+                  } else {
+                    throw new Error(`Failed to update/create tag ${majorTag}: ${err.message}`);
+                  }
+                }
+              } catch (err) {
+                core.setFailed(err.message);
+              }
+            })();
