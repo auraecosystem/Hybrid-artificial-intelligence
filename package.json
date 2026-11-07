@@ -1,12 +1,12 @@
 {
-  "name": "kubu-hai",
-  "version": "0.0.0",
+  "name": "kubu-hai-hybrid-runtime",
+  "version": "1.1.0",
   "description": "Deploy an actions artifact to GitHub Pages",
   "main": "./dist/index.js",
   "dependencies": {
     "@actions/artifact": "^2.1.11",
     "@actions/core": "^1.11.1",
-    "@actions/github": "^6.0.0",
+    "@actions/github": "^7.0.0",
     "@octokit/request-error": "^5.0.1",
     "http-status-messages": "^1.1.0"
   },
