@@ -16,6 +16,24 @@ class BackendResolutionTests(unittest.TestCase):
             "cuda": False, "metal": False, "linux": True, "macos": False,
         }
 
+    def test_flutter_runner_preflight_reports_missing_generated_files(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "CMakeLists.txt").write_text(
+                "add_subdirectory(${FLUTTER_MANAGED_DIR})", encoding="utf-8"
+            )
+            missing = MODULE.validate_project(root)
+            self.assertIn("flutter/CMakeLists.txt", missing)
+            self.assertIn("main.cc", missing)
+
+    def test_generic_cmake_project_has_no_flutter_requirements(self):
+        import tempfile
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root / "CMakeLists.txt").write_text("project(sample)", encoding="utf-8")
+            self.assertEqual(MODULE.validate_project(root), [])
+
     def test_auto_defaults_to_cpu(self):
         self.assertEqual(MODULE.resolve_backend("auto", self.caps), "cpu")
 
