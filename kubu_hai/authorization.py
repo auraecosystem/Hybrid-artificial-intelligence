@@ -77,7 +77,7 @@ class Ed25519GrantVerifier:
 
     def verify(self, token: str) -> ExecutionGrant:
         try:
-            payload_segment, signature_segment = token.split(".", 1)
+            parts = token.split(".")\n            if len(parts) != 2:\n                raise AuthorizationError("malformed execution grant")\n            payload_segment, signature_segment = parts
             payload = _decode_segment(payload_segment)
             signature = _decode_segment(signature_segment)
             if len(signature) != 64:
