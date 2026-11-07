@@ -24,6 +24,24 @@ def detect_capabilities() -> dict[str, bool]:
     }
 
 
+def validate_project(source: Path) -> list[str]:
+    """Return missing generated inputs for the repository's Flutter CMake runner."""
+    cmake_file = source / "CMakeLists.txt"
+    if not cmake_file.is_file():
+        return ["CMakeLists.txt"]
+    cmake_text = cmake_file.read_text(encoding="utf-8")
+    if "add_subdirectory(${FLUTTER_MANAGED_DIR})" not in cmake_text:
+        return []
+    required = [
+        "flutter/CMakeLists.txt",
+        "flutter/generated_plugins.cmake",
+        "flutter/generated_plugin_registrant.cc",
+        "main.cc",
+        "my_application.cc",
+    ]
+    return [name for name in required if not (source / name).is_file()]
+
+
 def resolve_backend(requested: str, caps: dict[str, bool]) -> str:
     if requested == "auto":
         # CPU remains the safe, deterministic default. GPU is opt-in.
@@ -62,6 +80,11 @@ def main(argv: list[str] | None = None) -> int:
     is_flutter = (source / "pubspec.yaml").is_file()
     if not is_flutter and not (source / "CMakeLists.txt").is_file():
         parser.error(f"no pubspec.yaml or CMakeLists.txt found in source: {source}")
+
+    missing_inputs = validate_project(source)
+    if missing_inputs:
+        parser.error("project build inputs are missing: " + ", ".join(missing_inputs)
+                     + ". Restore/generate the Flutter Linux runner files before building.")
 
     caps = detect_capabilities()
     print("Host capabilities:", ", ".join(f"{k}={v}" for k, v in caps.items()))
