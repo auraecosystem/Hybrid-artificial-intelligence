@@ -46,3 +46,19 @@
   },
   "homepage": "https://github.com/actions/deploy-pages#readme"
 }
+"json-summary",
+      "text",
+      "lcov"
+    ],
+    "collectCoverage": true,
+    "collectCoverageFrom": [
+      "./src/**"
+    ],
+    "coverageThreshold": {
+      "global": {
+        "lines": 70,
+        "statements": 70
+      }
+    }
+  }
+}
