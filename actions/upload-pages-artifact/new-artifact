@@ -1,4 +1,4 @@
-#!/usr/bin/env sh
+#!/usr/bin/env bash
 
 # Create some files and directories in the current folder
 echo 'hello' > hello.txt
