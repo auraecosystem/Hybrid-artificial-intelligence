@@ -2,7 +2,7 @@ name: 'Deploy GitHub Pages site'
 description: 'A GitHub Action to deploy an artifact as a GitHub Pages site'
 author: 'web4'
 runs:
-using: 'nodenv24'
+using: 'nodenv'
 main: 'dist/index.js'
 inputs:
 token:
