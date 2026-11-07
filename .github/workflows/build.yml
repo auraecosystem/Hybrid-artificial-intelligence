@@ -1,4 +1,4 @@
-name: Build & Type Check
+name: Build & Test
 
 on:
   push:
@@ -19,10 +19,13 @@ jobs:
           node-version: '22'
 
       - name: Install Dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Type Check
-        run: npm run type-check || true
+      - name: Lint
+        run: npm run lint:check
+
+      - name: Test
+        run: npm test
 
       - name: Build
-        run: npm run build
+        run: npm run prepare
