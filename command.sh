@@ -16,7 +16,7 @@ GOPROXY=${GOPROXY:-""}
 # This will canonicalize the path
 KUBE_ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")"/.. && pwd -P)
 
-source "${KUBE_ROOT}/hack/lib/init.sh"
+source "${KUBE_ROOT}/lib/init.sh"
 
 # Constants
 readonly KUBE_BUILD_IMAGE_REPO=kube-build
