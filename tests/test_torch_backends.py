@@ -34,7 +34,8 @@ class PyTorchBackendTests(unittest.TestCase):
             "tensor.regression", {"features": [[1.0, 2.0]]}, backend
         ))
         self.assertEqual(result.backend, backend)
-        self.assertAlmostEqual(result.output[0][0], 8.0, places=4)
+        # Scalar tensors are deliberately normalized to Python scalars.
+        self.assertAlmostEqual(result.output, 8.0, places=4)
 
     def test_cpu_executes_real_torch_model_through_hybrid_engine(self):
         self._run_model("cpu")
