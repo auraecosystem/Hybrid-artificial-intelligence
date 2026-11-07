@@ -21,7 +21,13 @@ class ModelArtifactManager:
             raise ValueError("artifact root must be a directory")
 
     def _inside_root(self, relative: str) -> Path:
-        candidate = (self.root / relative).resolve(strict=True)
+        requested = Path(relative)
+        if requested.is_absolute() or ".." in requested.parts:
+            raise ArtifactIntegrityError("absolute and parent-relative artifact paths are forbidden")
+        try:
+            candidate = (self.root / requested).resolve(strict=True)
+        except (OSError, RuntimeError, ValueError) as exc:
+            raise ArtifactIntegrityError("artifact path does not resolve to an existing file") from exc
         if not candidate.is_relative_to(self.root) or not candidate.is_file():
             raise ArtifactIntegrityError("artifact path escapes root or is not a file")
         return candidate
