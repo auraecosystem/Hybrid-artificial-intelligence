@@ -1,0 +1,27 @@
+name: KUBU-HAI build foundation tests
+
+on:
+  push:
+    paths:
+      - "kubu-hai-build/**"
+      - ".github/workflows/kubu-hai-build-tests.yml"
+  pull_request:
+    paths:
+      - "kubu-hai-build/**"
+      - ".github/workflows/kubu-hai-build-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run build driver unit tests
+        run: python -m unittest discover -s kubu-hai-build/tests -v
+      - name: Validate Python syntax
+        run: python -m py_compile kubu-hai-build/build.py

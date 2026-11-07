@@ -1,4 +1,4 @@
-name: Build & Type Check
+name: Build & Test
 
 on:
   push:
@@ -11,18 +11,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Setup Node.js
-        uses: actions/setup-node@v6.0.1
+        uses: actions/setup-node@v2.338.2
         with:
-          node-version: '20'
+          node-version: '22'
 
       - name: Install Dependencies
-        run: npm install
+        run: npm ci
 
-      - name: Type Check
-        run: npm run type-check || true
+      - name: Lint
+        run: npm run lint:check
+
+      - name: Test
+        run: npm test
 
       - name: Build
-        run: npm run build
+        run: npm run prepare
