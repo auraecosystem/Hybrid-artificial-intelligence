@@ -34,7 +34,7 @@ Container mode is for generic CMake projects; the supplied image does not bundle
 
 ## Tests
 
-```bash
+```shell
 python3 -m unittest discover -s kubu-hai-build/tests -v
 ```
 
