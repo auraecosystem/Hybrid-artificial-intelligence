@@ -26,7 +26,14 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Compile Python modules
-        run: python -m compileall -q kubu_hai tests
-      - name: Run unit tests
-        run: python -m unittest discover -s tests -v
+      - name: Install the runtime and CPU PyTorch
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Compile runtime and tests
+        run: python -m compileall -q kubu_hai
+      - name: Run KUBU-HAI unit tests
+        # test_102_require.py is an unrelated Apache/pytest integration test
+        # and requires its own httpd test harness. Keep it out of unittest CI.
+        run: python -m unittest discover -s tests -p 'test_[a-z]*.py' -v
