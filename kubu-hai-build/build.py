@@ -59,14 +59,20 @@ def main(argv: list[str] | None = None) -> int:
     build_dir = args.build_dir.resolve()
     if not source.is_dir():
         parser.error(f"source directory does not exist: {source}")
-    if not (source / "CMakeLists.txt").is_file():
-        parser.error(f"no CMakeLists.txt found in source: {source}")
+    is_flutter = (source / "pubspec.yaml").is_file()
+    if not is_flutter and not (source / "CMakeLists.txt").is_file():
+        parser.error(f"no pubspec.yaml or CMakeLists.txt found in source: {source}")
 
     caps = detect_capabilities()
     print("Host capabilities:", ", ".join(f"{k}={v}" for k, v in caps.items()))
     try:
         backend = resolve_backend(args.backend, caps)
         if args.mode == "docker":
+            if is_flutter:
+                raise RuntimeError(
+                    "This repository is a Flutter desktop project. The generic image "
+                    "does not bundle the Flutter SDK; use native mode with Flutter installed."
+                )
             if not caps["docker"]:
                 raise RuntimeError("Docker mode requested, but docker is not in PATH.")
             if backend == "metal":
@@ -103,9 +109,24 @@ def main(argv: list[str] | None = None) -> int:
                 build_command += ["--target", args.target]
             run(build_command)
         else:
+            build_dir.mkdir(parents=True, exist_ok=True)
+            if is_flutter:
+                flutter = shutil.which("flutter")
+                if not flutter:
+                    raise RuntimeError(
+                        "Flutter project detected (pubspec.yaml), but flutter is not in PATH. "
+                        "Install the Flutter SDK and Linux desktop dependencies."
+                    )
+                if not caps["linux"]:
+                    raise RuntimeError("This repository's current CMake runner targets Linux; build it on Linux.")
+                flutter_args = [flutter, "build", "linux", "--build-dir", str(build_dir)]
+                flutter_args.append("--debug" if args.build_type == "Debug" else "--release")
+                run(flutter_args)
+                print("Flutter Linux build completed. Backend selection is metadata only; "
+                      "no CUDA/Metal kernels are implemented by this Flutter runner.")
+                return 0
             if not caps["cmake"]:
                 raise RuntimeError("CMake was not found in PATH.")
-            build_dir.mkdir(parents=True, exist_ok=True)
             env = os.environ.copy()
             env["KUBU_HAI_BACKEND"] = backend
             env["KUBU_HAI_BUILD_TYPE"] = args.build_type
