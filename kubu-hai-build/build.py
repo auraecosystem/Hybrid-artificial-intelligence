@@ -67,6 +67,7 @@ def main(argv: list[str] | None = None) -> int:
     print("Host capabilities:", ", ".join(f"{k}={v}" for k, v in caps.items()))
     try:
         backend = resolve_backend(args.backend, caps)
+        build_dir.mkdir(parents=True, exist_ok=True)
         if args.mode == "docker":
             if is_flutter:
                 raise RuntimeError(
@@ -109,7 +110,6 @@ def main(argv: list[str] | None = None) -> int:
                 build_command += ["--target", args.target]
             run(build_command)
         else:
-            build_dir.mkdir(parents=True, exist_ok=True)
             if is_flutter:
                 flutter = shutil.which("flutter")
                 if not flutter:
