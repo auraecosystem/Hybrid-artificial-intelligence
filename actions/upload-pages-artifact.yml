@@ -16,12 +16,12 @@ jobs:
 
     # Deploy to the github-pages environment
     environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      name: gh-pages
+      url: ${{ build.deployment.outputs.page_url }}
 
     # Specify runner + deployment step
     runs-on: ubuntu-latest
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v7 # or specific "v6.0.1" version tag for this action
+        uses: actions/deploy-pages@v7.0.1 # or specific "v6.0.1" version tag for this action
