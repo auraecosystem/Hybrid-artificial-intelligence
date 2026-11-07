@@ -1,34 +1,36 @@
 # KUBU-HAI Hybrid Build Foundation
 
-A repository-local, opt-in build entry point for KUBU-HAI. It does not replace or modify existing project build files. It provides a portable CMake/Ninja build driver, capability probes, an isolated Linux toolchain image, and unit tests.
+An opt-in build entry point for this repository. It adds capability reporting, a native Flutter/Linux build path, a generic CMake path, an isolated Linux toolchain image, and unit tests. Existing project build files are left untouched.
 
-## Requirements
+## This repository's current build
 
-- Python 3.10+
-- CMake 3.24+
-- Ninja (recommended)
-- A C/C++ compiler
-- Docker only for container builds
+The root `CMakeLists.txt` is the Flutter Linux desktop runner. The driver detects `pubspec.yaml` and invokes Flutter rather than bypassing Flutter's generated CMake rules.
 
-## Native build
-
-From the repository root:
+On a Linux host with Flutter installed and Linux desktop dependencies configured:
 
 ```bash
-python3 kubu-hai-build/build.py --source . --build-dir .build/kubu-hai --backend auto
+python3 kubu-hai-build/build.py --source . --build-dir .build/kubu-hai --build-type Release
 ```
 
-Choose `cpu`, `cuda`, or `metal` explicitly with `--backend`. The driver reports detected capabilities; selecting CUDA or Metal does not magically add GPU kernels to a project. The source CMake project must consume `KUBU_HAI_BACKEND` and implement the corresponding backend.
+Install the Flutter SDK and the Flutter Linux desktop prerequisites before building. The driver reports a clear error if Flutter is missing.
 
-Metal is a native macOS build. Linux containers cannot provide native Apple Metal access.
+## Generic CMake projects
+
+For a non-Flutter source directory containing `CMakeLists.txt`:
+
+```bash
+python3 kubu-hai-build/build.py --source path/to/cmake-project --build-dir .build/native --backend cpu
+```
+
+The generic path passes `KUBU_HAI_BACKEND` and `KUBU_HAI_BUILD_TYPE` to CMake. The target project must explicitly implement and validate any CUDA or Metal backend. CPU is the safe default.
 
 ## Container build
 
 ```bash
-python3 kubu-hai-build/build.py --source . --mode docker --backend cpu
+python3 kubu-hai-build/build.py --source path/to/cmake-project --mode docker --backend cpu
 ```
 
-CUDA container builds require a Linux host, NVIDIA driver, NVIDIA Container Toolkit, and a Docker runtime configured for `--gpus all`. The container image is a build environment, not a GPU runtime for macOS.
+Container mode is for generic CMake projects; the supplied image does not bundle Flutter. CUDA container builds require a Linux host, NVIDIA driver, NVIDIA Container Toolkit, and Docker configured for `--gpus all`. Metal builds must run natively on macOS; Linux containers cannot expose native Apple Metal.
 
 ## Tests
 
@@ -38,18 +40,12 @@ python3 -m unittest discover -s kubu-hai-build/tests -v
 
 ## Safety and scope
 
-- No privileged container mode.
-- No host Docker socket mount.
-- Source is mounted read/write only for the build.
+- No privileged container mode or host Docker socket mount.
+- Source is mounted into the container only for the build.
 - Build output is kept in the selected build directory.
-- No external project is fetched or linked.
+- No external project source is fetched or linked.
 - No existing project files are overwritten by this addition.
 
-## Integration contract
+## Important backend limitation
 
-The driver configures CMake with:
-
-- `KUBU_HAI_BACKEND=cpu|cuda|metal`
-- `KUBU_HAI_BUILD_TYPE=Debug|Release|RelWithDebInfo`
-
-A project must explicitly implement and validate each backend. CPU is the portable baseline.
+This build driver is infrastructure, not a GPU implementation. It does not create CUDA kernels, Metal shaders, or runtime dispatch by itself. The current Flutter runner's build path is Linux-specific; macOS Metal support requires a separate native macOS runner and actual Metal backend implementation.
