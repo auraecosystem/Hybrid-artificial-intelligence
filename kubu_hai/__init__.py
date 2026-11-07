@@ -1,5 +1,11 @@
 """KUBU-HAI hybrid inference foundation."""
 from .engine import HybridEngine, InferenceRequest, InferenceResult
 from .registry import ModelRegistry
+from .artifacts import ArtifactIntegrityError, ModelArtifactManager
+from .backends.pytorch import PyTorchAdapter, load_pytorch_adapter
 
-__all__ = ["HybridEngine", "InferenceRequest", "InferenceResult", "ModelRegistry"]
+__all__ = [
+    "HybridEngine", "InferenceRequest", "InferenceResult", "ModelRegistry",
+    "ArtifactIntegrityError", "ModelArtifactManager",
+    "PyTorchAdapter", "load_pytorch_adapter",
+]
