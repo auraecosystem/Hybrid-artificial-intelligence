@@ -26,8 +26,8 @@
     "coverage-badge": "make-coverage-badge --output-path ./coverage_badge.svg",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "lint": "DEBUG=eslint:cli-engine eslint --fix .",
-    "lint:check": "DEBUG=eslint:cli-engine eslint .",
+    "lint": "ESLINT_USE_FLAT_CONFIG=false DEBUG=eslint:cli-engine eslint --fix .",
+    "lint:check": "ESLINT_USE_FLAT_CONFIG=false DEBUG=eslint:cli-engine eslint .",
     "prepare": "ncc build src/index.js -o dist --source-map --license licenses.txt",
     "test": "jest"
   },
