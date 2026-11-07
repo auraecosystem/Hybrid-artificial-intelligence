@@ -13,6 +13,7 @@ dependencies = []
 
 [project.optional-dependencies]
 torch = ["torch>=2.3"]
+security = ["cryptography>=42"]
 
 [tool.setuptools.packages.find]
 include = ["kubu_hai*"]
