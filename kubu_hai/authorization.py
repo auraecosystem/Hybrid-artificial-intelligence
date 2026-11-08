@@ -10,7 +10,7 @@ import json
 import threading
 import time
 from dataclasses import dataclass
-from typing import Any, Mapping, Protocol
+from typing import Any, Protocol
 
 from .engine import HybridEngine, InferenceRequest, InferenceResult
 
@@ -77,12 +77,16 @@ class Ed25519GrantVerifier:
 
     def verify(self, token: str) -> ExecutionGrant:
         try:
-            parts = token.split(".")\n            if len(parts) != 2:\n                raise AuthorizationError("malformed execution grant")\n            payload_segment, signature_segment = parts
+            parts = token.split(".")
+            if len(parts) != 2:
+                raise AuthorizationError("malformed execution grant")
+            payload_segment, signature_segment = parts
             payload = _decode_segment(payload_segment)
             signature = _decode_segment(signature_segment)
             if len(signature) != 64:
                 raise AuthorizationError("invalid execution grant signature")
             from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
+
             Ed25519PublicKey.from_public_bytes(self._public_key).verify(
                 signature, payload_segment.encode("ascii")
             )
@@ -92,8 +96,10 @@ class Ed25519GrantVerifier:
             required = ("sub", "aud", "task", "exp", "nbf", "jti")
             if any(key not in claims for key in required):
                 raise AuthorizationError("execution grant is missing required claims")
-            if any(not isinstance(claims[key], str) or not claims[key].strip()
-                   for key in ("sub", "aud", "task", "jti")):
+            if any(
+                not isinstance(claims[key], str) or not claims[key].strip()
+                for key in ("sub", "aud", "task", "jti")
+            ):
                 raise AuthorizationError("execution grant identity claims must be non-empty strings")
             if isinstance(claims["exp"], bool) or not isinstance(claims["exp"], int):
                 raise AuthorizationError("execution grant exp must be an integer")
