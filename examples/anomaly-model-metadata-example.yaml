@@ -1,0 +1,12 @@
+name: anomaly-model-metadata-example
+type: inference
+targetType: anomaly
+
+runtimeParameterDefinitions:
+  - fieldName: DEPLOYMENT_PARAMETER
+    type: deployment
+    description: An example of a deployment parameter
+    defaultValue: null
+  - fieldName: STRING_PARAMETER
+    type: string
+    description: An example of a string parameter

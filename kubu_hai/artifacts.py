@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from .backends.pytorch import PyTorchAdapter, load_pytorch_adapter
+from .model_metadata import load_model_metadata
 
 
 class ArtifactIntegrityError(RuntimeError):
@@ -39,6 +40,13 @@ class ModelArtifactManager:
             for chunk in iter(lambda: stream.read(1024 * 1024), b""):
                 digest.update(chunk)
         return digest.hexdigest()
+
+    def load_metadata(self, metadata_path: str | None = None) -> dict[str, Any] | None:
+        """Load optional YAML metadata constrained to the artifact root."""
+        if metadata_path is None:
+            return None
+        metadata_file = self._inside_root(metadata_path)
+        return load_model_metadata(metadata_file)
 
     def load_pytorch(
         self,
