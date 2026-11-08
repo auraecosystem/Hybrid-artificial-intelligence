@@ -21,3 +21,7 @@ git config --global core.symlink true
 uv sync
 uv run pytest tests                # Against an existing Pulumi stack
 uv run pytest tests --pulumi_up    # Run `pulumi up` first, then test
+ln -sf infra/configurations/llm/CHOSEN_CONFIGURATION infra/infra/llm.py
+uv sync
+uv run pytest tests                # Against an existing Pulumi stack
+uv run pytest tests --pulumi_up    # Run `pulumi up` first, then test
