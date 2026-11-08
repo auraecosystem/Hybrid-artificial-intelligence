@@ -18,3 +18,6 @@ winget install -e --id Microsoft.VCRedist.2015+.x86
 # This repository uses symlinks. Set the following.
 git config --global core.symlink true
 # Alternatively, run the same command without --global in the repo root to scope it to this repository only.
+uv sync
+uv run pytest tests                # Against an existing Pulumi stack
+uv run pytest tests --pulumi_up    # Run `pulumi up` first, then test
